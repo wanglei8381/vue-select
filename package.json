@@ -1,0 +1,13 @@
+{
+  "name": "vue-select",
+  "version": "1.0.0",
+  "author": "lei.wang@wuage.com",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/wanglei8381/vue-select.git"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vue": "^2.2.1"
+  }
+}
