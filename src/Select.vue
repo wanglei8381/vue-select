@@ -11,7 +11,7 @@
              :readonly="readonly"
              v-model="label"
              @focus="openSelect"
-             @blur="closeSelect">
+             @change="closeSelect">
       <i class="icon icon-select"></i>
     </label>
     <div
@@ -21,9 +21,11 @@
       <ul class="m-option-group">
         <li
             v-for="item of list"
-            class="m-select-option">
+            class="m-select-option"
+            @mousedown.prevent="chooseOption">
           {{item[labelAlias]}}
         </li>
+        <li v-if="list.length > 0" class="m-select-option">加载中..</li>
       </ul>
     </div>
   </div>
@@ -36,31 +38,24 @@
       list: {
         type: Array
       },
-
       labelAlias: {
         type: String,
         default: 'label'
       },
-
       valueAlias: {
         type: String,
         default: 'value'
       },
-
       placeholder: String,
-
       placeholderClass: String,
-
       disabled: {
         type: Boolean,
         default: false
       },
-
       readonly: {
         type: Boolean,
         default: true
       },
-
       value: [String, Number]
     },
 
