@@ -10,6 +10,24 @@
   <title></title>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">
+  <div>
+    <h1>你好</h1>
+    <select>
+      <option>1</option>
+      <option>2</option>
+    </select>
+    <div :style="style">
+      <vue-select
+          :list="list"
+          v-model="fruit"
+          placeholder="请选择"
+          :disabled="false"
+          :readonly="false"
+          :writeable="true">
+      </vue-select>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -1,39 +1,43 @@
 <template>
   <div
       class="m-select"
-      :class="{'disabled': disabled}"
+      :class="{disabled: disabled, open: open}"
       @click.stop>
     <label>
-      <input class="m-select-input"
-             :class="placeholderClass"
-             :placeholder="placeholder"
-             :disabled="disabled"
-             :readonly="readonly"
-             v-model="label"
-             @focus="openSelect"
-             @change="closeSelect">
+      <input
+          ref="input"
+          class="m-select-input"
+          :class="placeholderClass"
+          :placeholder="placeholder"
+          :disabled="disabled"
+          :readonly="readonly"
+          v-model="label"
+          @click="openSelect"
+          @blur="closeSelect">
       <i class="icon icon-select"></i>
     </label>
     <div
         class="m-option"
         v-show="open"
-        @mousedown="chooseOption">
+        @mousedown.prevent="chooseOption">
       <ul class="m-option-group">
         <li
-            v-for="item of list"
+            v-for="(item, index) of options"
+            :key="index"
+            :data-idx="index"
             class="m-select-option"
-            @mousedown.prevent="chooseOption">
-          {{item[labelAlias]}}
+            :class="{'selected': pickIdx === index}">
+          {{item | resolveLabel(labelAlias)}}
         </li>
-        <li v-if="list.length > 0" class="m-select-option">加载中..</li>
+        <li v-if="list.length === 0" class="m-select-option">加载中..</li>
       </ul>
     </div>
   </div>
 </template>
 <script type="text/babel">
+  const UA = window.navigator.userAgent.toLowerCase()
+  const isIE = UA && /msie|trident/.test(UA)
   export default{
-    name: 'select',
-
     props: {
       list: {
         type: Array
@@ -41,10 +45,6 @@
       labelAlias: {
         type: String,
         default: 'label'
-      },
-      valueAlias: {
-        type: String,
-        default: 'value'
       },
       placeholder: String,
       placeholderClass: String,
@@ -54,35 +54,184 @@
       },
       readonly: {
         type: Boolean,
-        default: true
+        default: false
       },
-      value: [String, Number]
+      writeable: {
+        type: Boolean,
+        default: false
+      },
+      value: null
     },
 
     data () {
       return {
-        label: 'hello vue',
-        open: false
+        open: false,
+        label: '',
+        prelabel: '',
+        prevalue: '',
+        pickIdx: -1
+      }
+    },
+
+    computed: {
+      options () {
+        if (this.readonly || !this.label) {
+          return this.list
+        }
+        return this.list.filter((item) => {
+          return item[this.labelAlias].indexOf(this.label) > -1
+        })
+      }
+    },
+
+    watch: {
+      // 数据回显
+      value: {
+        handler (val) {
+          if (this.prevalue === val) return
+          let list = this.options
+          if (val && list) {
+            each(list, (item, i) => {
+              if (item === val || plainEqual(item, val)) {
+                this.hanldeValue(item, i)
+                return true
+              }
+            })
+          }
+        },
+        immediate: true
+      },
+
+      // 当用户输入时, 动态改变选中的值
+      options (list) {
+        if (list && this.prevalue) {
+          each(list, (item, i) => {
+            if (item === this.prevalue || plainEqual(item, this.prevalue)) {
+              this.pickIdx = i
+              return true
+            }
+          })
+        }
+      }
+    },
+
+    filters: {
+      resolveLabel (item, labelAlias) {
+        return typeof item === 'string' ? item : item[labelAlias]
       }
     },
 
     methods: {
+      // 防止用户输入,但没选中
+      restore () {
+        this.label = this.prelabel
+      },
+
+      hanldeValue (item, i) {
+        this.prelabel = this.label = item[this.labelAlias]
+        this.prevalue = item
+        if (this.readonly) {
+          this.pickIdx = i
+        } else {
+          this.pickIdx = 0
+        }
+      },
+
+      autoSelect () {
+        let list = this.options
+        if (list && this.label) {
+          each(list, (item) => {
+            if (item[this.labelAlias] === this.label) {
+              this.hanldeValue(item)
+              this.$emit('input', item)
+              return true
+            }
+          })
+        }
+      },
+
       openSelect () {
-        this.open = true
+        if (!this.disabled) {
+          this.open = !this.open
+        }
       },
 
       closeSelect () {
-        this.open = false
+        if (this.cancelBlur) {
+          this.cancelBlur = false
+          return
+        }
+        if (!this.disabled) {
+          this.open = false
+          if (!this.readonly) {
+            // 对于输入不算的,只能点击选项选中
+            // 失去焦点需要还原原来的值
+            // 否则判断失去焦点输入的值和现有的值是否有相等的
+            if (!this.writeable) {
+              this.restore()
+            } else {
+              this.autoSelect()
+            }
+          }
+        }
       },
 
       chooseOption (e) {
-        console.log(e.target)
-        //        this.open = false
+        // 当出现滚动条时, 点击滚动条不消失
+        // IE下点击scrollbar会导致焦点移动到body
+        if (e.target.tagName.toUpperCase() === 'DIV') {
+          if (isIE) {
+            this.cancelBlur = true
+          }
+        } else {
+          let idx = parseInt(e.target.getAttribute('data-idx'))
+          let item = this.options[idx]
+          this.hanldeValue(item, idx)
+          this.$emit('input', item)
+          // 在失去焦点自动触发回调
+          this.$refs.input.blur()
+          if (isIE) {
+            this.cancelBlur = false
+            this.closeSelect()
+          }
+          // 在IE下input只读模式下,失去焦点会导致input清空
+          if (isIE) {
+            this.$nextTick(function () {
+              this.prelabel = this.label = item[this.labelAlias]
+            })
+          }
+        }
+      }
+    },
+
+    mounted () {
+      if (isIE) {
+        document.addEventListener('click', (e) => {
+          this.cancelBlur = false
+          this.closeSelect()
+        })
       }
     }
   }
+
+  function plainEqual (a, b) {
+    return JSON.stringify(a) === JSON.stringify(b)
+  }
+
+  function each (list, cb) {
+    for (let i = 0, len = list.length; i < len; i++) {
+      if (cb(list[i], i)) {
+        break
+      }
+    }
+  }
+
 </script>
 <style scoped lang="stylus" rel="stylesheet/stylus">
+  ::-ms-clear, ::-ms-reveal {
+    display: none;
+  }
+
   // 图标
   .icon {
     box-sizing border-box
@@ -110,6 +259,7 @@
     top -1px
     width calc(100% + 2px)
     height calc(100% + 2px)
+    font-size 12px
     &.disabled {
       .m-select-input {
         cursor not-allowed
@@ -130,12 +280,13 @@
       color #1f2d3d
       font-size inherit
       outline none
-      &:focus {
-        border 1px solid #316ccb
-        z-index 1
-        + .icon-select {
-          background-position -230px 0
-        }
+    }
+
+    &.open .m-select-input {
+      border 1px solid #316ccb
+      z-index 1
+      + .icon-select {
+        background-position -230px 0
       }
     }
 
