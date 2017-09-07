@@ -1,6 +1,7 @@
 {
   "files": {
-    "src/index": 1
+    "example/src/index.js": 1,
+    "exclude": true
   },
-  "index": "index.html"
+  "index": "example/index.html"
 }

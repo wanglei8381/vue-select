@@ -2,27 +2,27 @@
   <div class="m-select" :class="{'disabled': disabled}" @click.stop>
     <label class="m-select-label">
       <input
-        ref="input"
-        class="m-select-input"
-        :disabled="disabled"
-        :readonly="readonly"
-        :placeholder="placeholder"
-        :value="value"
-        @keydown.down.prevent="navigateOptions('next')"
-        @keydown.up.prevent="navigateOptions('prev')"
-        @keydown.enter.prevent="selectOption"
-        @input="onInput"
-        @click="openSelect"
-        @blur="closeSelect">
+          ref="input"
+          class="m-select-input"
+          :disabled="disabled"
+          :readonly="readonly"
+          :placeholder="placeholder"
+          :value="value"
+          @keydown.down.prevent="navigateOptions('next')"
+          @keydown.up.prevent="navigateOptions('prev')"
+          @keydown.enter.prevent="selectOption"
+          @input="onInput"
+          @click="openSelect"
+          @blur="closeSelect">
     </label>
     <div v-show="this.size > 0 && open"
          class="m-option-box"
          :style="{maxHeight: this.maxColumns * this.columnHeight + 24 + 'px'}">
       <div
-        ref="scrollBar"
-        class="m-option"
-        :style="{maxHeight: this.maxColumns * this.columnHeight + 'px'}"
-        @mousedown.prevent="chooseOption">
+          ref="scrollBar"
+          class="m-option"
+          :style="{maxHeight: this.maxColumns * this.columnHeight + 'px'}"
+          @mousedown.prevent="chooseOption">
         <ul class="m-option-group">
           <slot></slot>
         </ul>
@@ -177,6 +177,7 @@
     position: relative
     width 100%
     height 100%
+    min-height 30px
     &.disabled {
       .m-select-input {
         cursor not-allowed
@@ -242,29 +243,17 @@
   }
 
   @css {
-    ::-webkit-input-placeholder {
+    .m-select-input::-webkit-input-placeholder {
       color: #c5c5c5;
     }
-    :-moz-placeholder {
+    .m-select-input:-moz-placeholder {
       　　color: #c5c5c5;
     }
-    ::-moz-placeholder {
+    .m-select-input::-moz-placeholder {
       　　color: #c5c5c5;
     }
-    :-ms-input-placeholder {
+    .m-select-input:-ms-input-placeholder {
       　　color: #c5c5c5;
-    }
-    .u-light::-webkit-input-placeholder {
-      color: #959595;
-    }
-    .u-light:-moz-placeholder {
-      　　color: #959595;
-    }
-    .u-light::-moz-placeholder {
-      　　color: #959595;
-    }
-    .u-light:-ms-input-placeholder {
-      　　color: #959595;
     }
   }
 </style>
